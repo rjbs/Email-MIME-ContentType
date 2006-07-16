@@ -1,7 +1,6 @@
 Changes
-ContentType.pm
+lib/Email/MIME/ContentType.pm
 Makefile.PL
 MANIFEST
 README
 t/1.t
-META.yml                                Module meta-data (added by MakeMaker)
