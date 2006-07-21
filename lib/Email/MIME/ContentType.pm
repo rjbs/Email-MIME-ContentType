@@ -39,8 +39,10 @@ sub _parse_attributes {
         s/^;//;
         s/^\s+// and next;
         s/\s+$//;
-        s/^([^$tspecials]+)=// or do { carp "Illegal Content-Type parameter $_";
-                                       return $attribs; };
+        unless (s/^([^$tspecials]+)=//) {
+          carp "Illegal Content-Type parameter $_";
+          return $attribs;
+        }
         my $attribute = lc $1;
         my $value = _extract_ct_attribute_value();
         $attribs->{$attribute} = $value;
