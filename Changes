@@ -1,5 +1,9 @@
 Revision history for Perl extension Email::MIME::ContentType.
 
+1.011    2006-10-12
+    - clearer special case for undef/empty content-type
+      (thanks, JESSE!)
+
 1.01
     - typo fix in documentation by John Linderman.
     - new author, Casey West.

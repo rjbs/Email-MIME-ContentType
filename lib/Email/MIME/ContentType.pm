@@ -5,7 +5,7 @@ use vars qw[$VERSION @EXPORT];
 @EXPORT = qw(parse_content_type);
 use strict;
 use Carp;
-$VERSION = '1.01';
+$VERSION = '1.011';
 
 my $tspecials = quotemeta '()<>@,;:\\"/[]?=';
 my $ct_default = 'text/plain; charset=us-ascii';
@@ -14,22 +14,27 @@ my $extract_quoted =
 
 # For documentation, really:
 {
-my $discrete  = qr/[^$tspecials]+/;
-my $composite = qr/[^$tspecials]+/;
-my $params    = qr/;.*/;
+  my $discrete  = qr/[^$tspecials]+/;
+  my $composite = qr/[^$tspecials]+/;
+  my $params    = qr/;.*/;
 
-sub parse_content_type { # XXX This does not take note of RFC2822 comments
-    my $ct = shift;
+  sub parse_content_type { # XXX This does not take note of RFC2822 comments
+      my $ct = shift;
 
-    $ct =~ m[ ^ ($discrete) / ($composite) \s* ($params)? $ ]x
-        or return parse_content_type($ct_default);
-        # It is also recommend (sic.) that this default be assumed when a
-        # syntactically invalid Content-Type header field is encountered.
+      # If the header isn't there or is empty, give default answer.
+      return parse_content_type($ct_default) unless defined $ct and length $ct;
 
-    return { discrete => lc $1, composite => lc $2,
-             attributes => _parse_attributes($3) };
-}
+      # It is also recommend (sic.) that this default be assumed when a
+      # syntactically invalid Content-Type header field is encountered.
+      return parse_content_type($ct_default)
+          unless $ct =~ m[ ^ ($discrete) / ($composite) \s* ($params)? $ ]x;
 
+      return {
+          discrete   => lc $1,
+          composite  => lc $2,
+          attributes => _parse_attributes($3)
+      };
+  }
 }
 
 sub _parse_attributes {
