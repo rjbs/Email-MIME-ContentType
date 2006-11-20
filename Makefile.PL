@@ -1,13 +1,13 @@
-use 5.006;
+use 5.006; # why?  -- rjbs, 2006-11-20
+use strict;
 use ExtUtils::MakeMaker;
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
+
 WriteMakefile(
-    NAME              => 'Email::MIME::ContentType',
-    VERSION_FROM      => 'lib/Email/MIME/ContentType.pm', # finds $VERSION
-    PREREQ_PM         => {}, # e.g., Module::Name => 1.1
-    ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
-      (ABSTRACT_FROM  => 'lib/Email/MIME/ContentType.pm',
-       # retrieve abstract from module
-       AUTHOR         => 'Simon Cozens <simon@nonet>') : ()),
+  NAME              => 'Email::MIME::ContentType',
+  VERSION_FROM      => 'lib/Email/MIME/ContentType.pm',
+  (eval { ExtUtils::MakeMaker->VERSION(6.21) } ? (LICENSE => 'perl') : ()),
+  PREREQ_PM         => {},
+  ($] >= 5.005 ?
+    (ABSTRACT_FROM  => 'lib/Email/MIME/ContentType.pm',
+     AUTHOR         => 'Simon Cozens <simon@nonet>') : ()),
 );
