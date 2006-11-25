@@ -1,5 +1,8 @@
 Revision history for Perl extension Email::MIME::ContentType.
 
+1.012    2006-11-25
+    - allow carp-avoidance through (ugh) package variable; bug 14076
+
 1.011    2006-10-12
     - clearer special case for undef/empty content-type
       (thanks, JESSE!)

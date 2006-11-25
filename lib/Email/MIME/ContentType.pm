@@ -1,11 +1,16 @@
 package Email::MIME::ContentType;
 # $Id: ContentType.pm,v 1.3 2005/02/22 00:24:03 cwest Exp $
 use base 'Exporter';
-use vars qw[$VERSION @EXPORT];
+use vars qw[
+  $VERSION @EXPORT
+  $STRICT_PARAMS
+];
 @EXPORT = qw(parse_content_type);
 use strict;
 use Carp;
-$VERSION = '1.011';
+$VERSION = '1.012';
+
+$STRICT_PARAMS=1;
 
 my $tspecials = quotemeta '()<>@,;:\\"/[]?=';
 my $ct_default = 'text/plain; charset=us-ascii';
@@ -45,7 +50,11 @@ sub _parse_attributes {
         s/^\s+// and next;
         s/\s+$//;
         unless (s/^([^$tspecials]+)=//) {
-          carp "Illegal Content-Type parameter $_";
+          # We check for $_'s truth because some mail software generates a
+          # Content-Type like this: "Content-Type: text/plain;"
+          # RFC 1521 section 3 says a parameter must exist if there is a
+          # semicolon.
+          carp "Illegal Content-Type parameter $_" if $STRICT_PARAMS or $_;
           return $attribs;
         }
         my $attribute = lc $1;
@@ -80,6 +89,12 @@ __END__
 
 Email::MIME::ContentType - Parse a MIME Content-Type Header
 
+=head1 VERSION
+
+version 1.012
+
+  $Id$
+
 =head1 SYNOPSIS
 
   use Email::MIME::ContentType;
@@ -100,6 +115,18 @@ This module is responsible for parsing email content type headers
 according to section 5.1 of RFC 2045. It returns a hash as above, with
 entries for the discrete type, the composite type, and a hash of
 attributes.
+
+=head1 WARNINGS
+
+This is not a valid content-type header, according to both RFC 1521 and RFC
+2045:
+
+  Content-Type: type/subtype;
+
+If a semicolon appears, a parameter must.  C<parse_content_type> will carp if
+it encounters a header of this type, but you can suppress this by setting
+C<$Email::MIME::ContentType::STRICT_PARAMS> to a false value.  Please consider
+localizing this assignment!
 
 =head2 EXPORT
 
