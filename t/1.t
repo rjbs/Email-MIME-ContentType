@@ -1,7 +1,7 @@
 # vim:ft=perl
 use Test::More 'no_plan';
-use_ok("Email::MIME::ContentType");
-Email::MIME::ContentType->import("parse_content_type");
+BEGIN { use_ok("Email::MIME::ContentType"); }
+
 my %ct_tests = (
     "application/foo" => 
         { discrete => "application", composite => "foo", attributes=>{} },

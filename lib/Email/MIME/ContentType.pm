@@ -98,16 +98,19 @@ version 1.012
 =head1 SYNOPSIS
 
   use Email::MIME::ContentType;
-  my $ct = "Content-Type: text/plain; charset="us-ascii"; format=flowed";
+
+  # Content-Type: text/plain; charset="us-ascii"; format=flowed
+  my $ct = 'text/plain; charset="us-ascii"; format=flowed';
   my $data = parse_content_type($ct);
+
   $data = {
-    discrete => "text",
-    composite => "plain",
+    discrete   => "text",
+    composite  => "plain",
     attributes => {
-        charset => "us-ascii",
-        format => "flowed"
+      charset => "us-ascii",
+      format  => "flowed"
     }
-  }
+  };
 
 =head1 DESCRIPTION
 
