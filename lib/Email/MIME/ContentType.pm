@@ -1,5 +1,5 @@
 package Email::MIME::ContentType;
-# $Id: ContentType.pm,v 1.3 2005/02/22 00:24:03 cwest Exp $
+# $Id$
 use base 'Exporter';
 use vars qw[
   $VERSION @EXPORT
@@ -8,7 +8,7 @@ use vars qw[
 @EXPORT = qw(parse_content_type);
 use strict;
 use Carp;
-$VERSION = '1.012';
+$VERSION = '1.013';
 
 $STRICT_PARAMS=1;
 
@@ -91,7 +91,7 @@ Email::MIME::ContentType - Parse a MIME Content-Type Header
 
 =head1 VERSION
 
-version 1.012
+version 1.013
 
   $Id$
 

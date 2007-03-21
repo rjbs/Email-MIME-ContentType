@@ -1,6 +1,6 @@
 Revision history for Perl extension Email::MIME::ContentType.
 
-1.012     2007-03-20
+1.013     2007-03-20
           fix significantly broken SYNOPSIS
 
 1.012     2006-11-25
