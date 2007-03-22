@@ -8,7 +8,7 @@ use vars qw[
 @EXPORT = qw(parse_content_type);
 use strict;
 use Carp;
-$VERSION = '1.013';
+$VERSION = '1.014';
 
 $STRICT_PARAMS=1;
 
@@ -112,12 +112,15 @@ version 1.013
     }
   };
 
-=head1 DESCRIPTION
+=head1 FUNCTIONS
 
-This module is responsible for parsing email content type headers
-according to section 5.1 of RFC 2045. It returns a hash as above, with
-entries for the discrete type, the composite type, and a hash of
-attributes.
+=head2 parse_content_header
+
+This routine is exported by default.
+
+This routine parses email content type headers according to section 5.1 of RFC
+2045. It returns a hash as above, with entries for the discrete type, the
+composite type, and a hash of attributes.
 
 =head1 WARNINGS
 
@@ -131,18 +134,16 @@ it encounters a header of this type, but you can suppress this by setting
 C<$Email::MIME::ContentType::STRICT_PARAMS> to a false value.  Please consider
 localizing this assignment!
 
-=head2 EXPORT
+=head1 PERL EMAIL PROJECT
 
-C<parse_content_type>
+This module is maintained by the Perl Email Project.
+
+L<http://emailproject.perl.org/wiki/Email::MIME::ContentType>
 
 =head1 AUTHOR
 
 Casey West, C<casey@geeknest.com>
 Simon Cozens, C<simon@cpan.org>
-
-=head1 CONTACT
-
-Perl Email Project, C<pep@perl.org>.
 
 =head1 SEE ALSO
 
