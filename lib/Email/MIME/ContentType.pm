@@ -114,7 +114,7 @@ version 1.013
 
 =head1 FUNCTIONS
 
-=head2 parse_content_header
+=head2 parse_content_type
 
 This routine is exported by default.
 
