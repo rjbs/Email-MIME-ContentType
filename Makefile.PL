@@ -10,4 +10,12 @@ WriteMakefile(
   ($] >= 5.005 ?
     (ABSTRACT_FROM  => 'lib/Email/MIME/ContentType.pm',
      AUTHOR         => 'Simon Cozens <simon@nonet>') : ()),
+  (eval { ExtUtils::MakeMaker->VERSION(6.46) }
+    ? (META_MERGE => {
+        resources => {
+          Repository => 'http://github.com/rjbs/email-mime-contenttype'
+        }
+      })
+    : ()
+  ),
 );
