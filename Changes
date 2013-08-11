@@ -1,5 +1,12 @@
 Revision history for Perl extension Email::MIME::ContentType
 
+{{$NEXT}}
+          correct the longstanding and embarrassing misuse of "discrete" and
+          "composite" to mean "type" and "subtype"; the returned data still
+          contains the wrong old names so your code shouldn't break
+
+          repackage to update bugtracker, repo, etc.
+
 1.015     2009-01-22
           add repo metadata
 
