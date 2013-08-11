@@ -1,15 +1,32 @@
-package Email::MIME::ContentType;
-use base 'Exporter';
-use vars qw[
-  $VERSION @EXPORT
-  $STRICT_PARAMS
-];
-@EXPORT = qw(parse_content_type);
 use strict;
-use Carp;
-$VERSION = '1.015';
+use warnings;
+package Email::MIME::ContentType;
+# ABSTRACT: Parse a MIME Content-Type Header
 
-$STRICT_PARAMS=1;
+use Carp;
+use Exporter 5.57 'import';
+our @EXPORT = qw(parse_content_type);
+
+=head1 SYNOPSIS
+
+  use Email::MIME::ContentType;
+
+  # Content-Type: text/plain; charset="us-ascii"; format=flowed
+  my $ct = 'text/plain; charset="us-ascii"; format=flowed';
+  my $data = parse_content_type($ct);
+
+  $data = {
+    type       => "text",
+    subtype    => "plain",
+    attributes => {
+      charset => "us-ascii",
+      format  => "flowed"
+    }
+  };
+
+=cut
+
+our $STRICT_PARAMS=1;
 
 my $tspecials = quotemeta '()<>@,;:\\"/[]?=';
 my $ct_default = 'text/plain; charset=us-ascii';
@@ -88,36 +105,7 @@ sub _extract_ct_attribute_value { # EXPECTS AND MODIFIES $_
 
 1;
 
-__END__
-
-=head1 NAME
-
-Email::MIME::ContentType - Parse a MIME Content-Type Header
-
-=head1 VERSION
-
-version 1.013
-
-=head1 SYNOPSIS
-
-  use Email::MIME::ContentType;
-
-  # Content-Type: text/plain; charset="us-ascii"; format=flowed
-  my $ct = 'text/plain; charset="us-ascii"; format=flowed';
-  my $data = parse_content_type($ct);
-
-  $data = {
-    type       => "text",
-    subtype    => "plain",
-    attributes => {
-      charset => "us-ascii",
-      format  => "flowed"
-    }
-  };
-
-=head1 FUNCTIONS
-
-=head2 parse_content_type
+=func parse_content_type
 
 This routine is exported by default.
 
@@ -141,20 +129,5 @@ If a semicolon appears, a parameter must.  C<parse_content_type> will carp if
 it encounters a header of this type, but you can suppress this by setting
 C<$Email::MIME::ContentType::STRICT_PARAMS> to a false value.  Please consider
 localizing this assignment!
-
-=head1 PERL EMAIL PROJECT
-
-This module is maintained by the Perl Email Project.
-
-L<http://emailproject.perl.org/wiki/Email::MIME::ContentType>
-
-=head1 AUTHOR
-
-Casey West, C<casey@geeknest.com>
-Simon Cozens, C<simon@cpan.org>
-
-=head1 SEE ALSO
-
-L<Email::MIME>
 
 =cut
