@@ -13,14 +13,14 @@ $STRICT_PARAMS=1;
 
 my $tspecials = quotemeta '()<>@,;:\\"/[]?=';
 my $ct_default = 'text/plain; charset=us-ascii';
-my $extract_quoted = 
+my $extract_quoted =
     qr/(?:\"(?:[^\\\"]*(?:\\.[^\\\"]*)*)\"|\'(?:[^\\\']*(?:\\.[^\\\']*)*)\')/;
 
 # For documentation, really:
 {
-  my $discrete  = qr/[^$tspecials]+/;
-  my $composite = qr/[^$tspecials]+/;
-  my $params    = qr/;.*/;
+  my $type    = qr/[^$tspecials]+/;
+  my $subtype = qr/[^$tspecials]+/;
+  my $params  = qr/;.*/;
 
   sub parse_content_type { # XXX This does not take note of RFC2822 comments
       my $ct = shift;
@@ -31,12 +31,18 @@ my $extract_quoted =
       # It is also recommend (sic.) that this default be assumed when a
       # syntactically invalid Content-Type header field is encountered.
       return parse_content_type($ct_default)
-          unless $ct =~ m[ ^ ($discrete) / ($composite) \s* ($params)? $ ]x;
+          unless $ct =~ m[ ^ ($type) / ($subtype) \s* ($params)? $ ]x;
 
+      my ($type, $subtype) = (lc $1, lc $2);
       return {
-          discrete   => lc $1,
-          composite  => lc $2,
-          attributes => _parse_attributes($3)
+          type       => $type,
+          subtype    => $subtype,
+          attributes => _parse_attributes($3),
+
+          # This is dumb.  Really really dumb.  For backcompat. -- rjbs,
+          # 2013-08-10
+          discrete   => $type,
+          composite  => $subtype,
       };
   }
 }
@@ -101,8 +107,8 @@ version 1.013
   my $data = parse_content_type($ct);
 
   $data = {
-    discrete   => "text",
-    composite  => "plain",
+    type       => "text",
+    subtype    => "plain",
     attributes => {
       charset => "us-ascii",
       format  => "flowed"
@@ -116,8 +122,13 @@ version 1.013
 This routine is exported by default.
 
 This routine parses email content type headers according to section 5.1 of RFC
-2045. It returns a hash as above, with entries for the discrete type, the
-composite type, and a hash of attributes.
+2045. It returns a hash as above, with entries for the type, the subtype, and a
+hash of attributes.
+
+For backward compatibility with a really unfortunate misunderstanding of RFC
+2045 by the early implementors of this module, C<discrete> and C<composite> are
+also present in the returned hashref, with the values of C<type> and C<subtype>
+respectively.
 
 =head1 WARNINGS
 
