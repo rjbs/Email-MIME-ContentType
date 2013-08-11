@@ -26,7 +26,7 @@ our @EXPORT = qw(parse_content_type);
 
 =cut
 
-our $STRICT_PARAMS=1;
+our $STRICT_PARAMS = 1;
 
 my $tspecials = quotemeta '()<>@,;:\\"/[]?=';
 my $ct_default = 'text/plain; charset=us-ascii';
@@ -76,7 +76,7 @@ sub _parse_attributes {
           # Content-Type like this: "Content-Type: text/plain;"
           # RFC 1521 section 3 says a parameter must exist if there is a
           # semicolon.
-          carp "Illegal Content-Type parameter $_" if $STRICT_PARAMS or $_;
+          carp "Illegal Content-Type parameter $_" if $STRICT_PARAMS and $_;
           return $attribs;
         }
         my $attribute = lc $1;
