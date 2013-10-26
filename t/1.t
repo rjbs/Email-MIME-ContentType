@@ -3,6 +3,13 @@ use Test::More 'no_plan';
 BEGIN { use_ok("Email::MIME::ContentType"); }
 
 my %ct_tests = (
+    '' => { type => "text", subtype => "plain",
+            attributes => { charset => "us-ascii" } },
+
+    "text/plain"   => { type => "text", subtype => "plain", attributes=>{} },
+    "text/plain;"  => { type => "text", subtype => "plain", attributes=>{} },
+    "text/plain; " => { type => "text", subtype => "plain", attributes=>{} },
+
     "application/foo" =>
         { type => "application", subtype => "foo", attributes=>{} },
     "multipart/mixed; boundary=unique-boundary-1" =>
@@ -14,8 +21,6 @@ my %ct_tests = (
           attributes => { "access-type" => "local-file",
                           "name"        => "/u/nsb/Me.jpeg" }
         },
-    '' => { type => "text", subtype => "plain",
-            attributes => { charset => "us-ascii" } },
     'multipart/mixed; boundary="----------=_1026452699-10321-0" ' => {
               'type' => 'multipart',
               'subtype' => 'mixed',
@@ -31,5 +36,5 @@ for (sort keys %ct_tests) {
     $expect->{discrete}  = $expect->{type};
     $expect->{composite} = $expect->{subtype};
 
-    is_deeply(parse_content_type($_), $ct_tests{$_}, "Can parse C-T $_");
+    is_deeply(parse_content_type($_), $ct_tests{$_}, "Can parse C-T <$_>");
 }
