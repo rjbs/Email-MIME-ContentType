@@ -28,6 +28,20 @@ my %ct_tests = (
                                 'boundary' => '----------=_1026452699-10321-0'
                               }
            },
+    'multipart/report; boundary= "=_0c5bb6a163fe08545fb49e4a=73e476c3-cd5a-5ba3-b910-2e1563f157b8_="' => {
+            'type' => 'multipart',
+            'subtype' => 'report',
+            'attributes' => {
+                'boundary' => '=_0c5bb6a163fe08545fb49e4a=73e476c3-cd5a-5ba3-b910-2e1563f157b8_='
+            }
+    },
+    'multipart/report; boundary=' . " \t" . '"=_0c5bb6a163fe08545fb49e4a=73e476c3-cd5a-5ba3-b910-2e1563f157b8_="' => {
+            'type' => 'multipart',
+            'subtype' => 'report',
+            'attributes' => {
+                'boundary' => '=_0c5bb6a163fe08545fb49e4a=73e476c3-cd5a-5ba3-b910-2e1563f157b8_='
+            }
+    }
 );
 
 for (sort keys %ct_tests) {
