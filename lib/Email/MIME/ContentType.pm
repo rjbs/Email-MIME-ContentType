@@ -71,7 +71,7 @@ sub _parse_attributes {
         s/^;//;
         s/^\s+// and next;
         s/\s+$//;
-        unless (s/^([^$tspecials]+)=//) {
+        unless (s/^([^$tspecials]+)=\s*//) {
           # We check for $_'s truth because some mail software generates a
           # Content-Type like this: "Content-Type: text/plain;"
           # RFC 1521 section 3 says a parameter must exist if there is a
