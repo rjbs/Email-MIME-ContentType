@@ -2,6 +2,10 @@ Revision history for Perl extension Email::MIME::ContentType
 
 {{$NEXT}}
 
+1.018     2015-04-07 19:46:00-04:00 America/New_York
+        - cope with space between "=" and parameter values, like:
+          charset= "utf-8"
+
 1.017     2013-08-10 23:19:14 America/New_York
         - make $STRICT_PARAMS actually work! (thanks, Matthew Green!)
           [rt.cpan.org #87460]
