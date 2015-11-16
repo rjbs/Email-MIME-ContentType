@@ -28,31 +28,37 @@ our @EXPORT = qw(parse_content_type);
 
 our $STRICT_PARAMS = 1;
 
-my $tspecials = quotemeta '()<>@,;:\\"/[]?=';
-my $ct_default = 'text/plain; charset=us-ascii';
-my $extract_quoted =
-    qr/(?:\"(?:[^\\\"]*(?:\\.[^\\\"]*)*)\"|\'(?:[^\\\']*(?:\\.[^\\\']*)*)\')/;
-
 # For documentation, really:
-my $type_re = qr/[^$tspecials]+/;
-my $params  = qr/;.*/;
+my $special_re   = qr/[\x00-\x19\(\)<>\@,;:\\"\/\[\]?=]/;
+my $unspecial_re = qr/[^\x00-\x19\(\)<>\@,;:\\"\/\[\]?=]/;
+my $type_re      = qr/[^\x00-\x19\(\)<>\@,;:\\"\/\[\]?=]+/;
+my $params       = qr/;.*/;
+
+sub __default_ct {
+  return {
+    type    => 'text',  discrete  => 'text',
+    subtype => 'plain', composite => 'plain',
+    attributes => { charset => 'us-ascii' }
+  }
+}
 
 sub parse_content_type { # XXX This does not take note of RFC2822 comments
   my $ct = shift;
 
   # If the header isn't there or is empty, give default answer.
-  return parse_content_type($ct_default) unless defined $ct and length $ct;
+  return __default_ct() unless defined $ct and length $ct;
+
+  my ($base, $params)  = split m{;\s*}, $ct, 2;
+  my ($type, $subtype) = split m{/}, lc $base, 2;
 
   # It is also recommend (sic.) that this default be assumed when a
-  # syntactically invalid Content-Type header field is encountered.
-  return parse_content_type($ct_default)
-    unless $ct =~ m[ ^ ($type_re) / ($type_re) \s* ($params)? $ ]x;
+  # syntactically invalid Content-Type header field is encountered. - RFC2045
+  return __default_ct() if $type =~ $special_re or $subtype =~ $special_re;
 
-  my ($type, $subtype) = (lc $1, lc $2);
   return {
     type       => $type,
     subtype    => $subtype,
-    attributes => _parse_attributes($3),
+    attributes => _parse_attributes($params),
 
     # This is dumb.  Really really dumb.  For backcompat. -- rjbs,
     # 2013-08-10
@@ -64,11 +70,11 @@ sub parse_content_type { # XXX This does not take note of RFC2822 comments
 sub _parse_attributes {
     local $_ = shift;
     my $attribs = {};
-    while ($_) {
-        s/^;//;
-        s/^\s+// and next;
-        s/\s+$//;
-        unless (s/^([^$tspecials]+)=\s*//) {
+    while (defined and length) {
+        my ($name, $rest) = split /\s*=\s*/, $_, 2;
+        $_ = $rest;
+
+        if ($STRICT_PARAMS and $name =~ /$special_re/) {
           # We check for $_'s truth because some mail software generates a
           # Content-Type like this: "Content-Type: text/plain;"
           # RFC 1521 section 3 says a parameter must exist if there is a
@@ -76,7 +82,8 @@ sub _parse_attributes {
           carp "Illegal Content-Type parameter $_" if $STRICT_PARAMS and $_;
           return $attribs;
         }
-        my $attribute = lc $1;
+
+        my $attribute = lc $name;
         my $value = _extract_ct_attribute_value();
         $attribs->{$attribute} = $value;
     }
@@ -84,20 +91,43 @@ sub _parse_attributes {
 }
 
 sub _extract_ct_attribute_value { # EXPECTS AND MODIFIES $_
-    my $value;
-    while ($_) {
-        s/^([^$tspecials]+)// and $value .= $1;
-        s/^($extract_quoted)// and do {
-            my $sub = $1; $sub =~ s/^["']//; $sub =~ s/["']$//;
-            $value .= $sub;
-        };
-        /^;/ and last;
-        /^([$tspecials])/ and do {
-            carp "Unquoted $1 not allowed in Content-Type!";
-            return;
-        }
+    if (s/\A($type_re);?\s*//) {
+      return $1;
     }
-    return $value;
+
+    if (/\A(["'])/) {
+      s/\A$1([^$1]+)$1;?\s*//;
+      return $1;
+    }
+
+    if (/($special_re+)/) {
+      carp "Unquoted $1 not allowed in Content-Type!";
+      return;
+    }
+
+    return;
+}
+
+sub build_content_type {
+  my ($content_type) = @_;
+
+  for my $req (qw(type subtype)) {
+    croak "Invalid Content-Type: missing value for $_"
+      unless my $v = $content_type->{$req};
+
+    croak "Illegal value for Content-Type $req value: $v"
+      unless $v =~ $type_re
+  }
+
+  my $content_type_str = "$content_type->{type}/$content_type->{subtype}";
+  for my $k (keys %{$content_type->{attributes}}) {
+    my $v = $content_type->{attributes}->{$k};
+    next unless $v;
+    # param names are RFC2045 `token`
+    # param values are token / quoted-string
+    $content_type_str .= "; $k=$v";
+  }
+  return $content_type_str;
 }
 
 1;
