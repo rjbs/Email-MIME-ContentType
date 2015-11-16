@@ -34,34 +34,31 @@ my $extract_quoted =
     qr/(?:\"(?:[^\\\"]*(?:\\.[^\\\"]*)*)\"|\'(?:[^\\\']*(?:\\.[^\\\']*)*)\')/;
 
 # For documentation, really:
-{
-  my $type    = qr/[^$tspecials]+/;
-  my $subtype = qr/[^$tspecials]+/;
-  my $params  = qr/;.*/;
+my $type_re = qr/[^$tspecials]+/;
+my $params  = qr/;.*/;
 
-  sub parse_content_type { # XXX This does not take note of RFC2822 comments
-      my $ct = shift;
+sub parse_content_type { # XXX This does not take note of RFC2822 comments
+  my $ct = shift;
 
-      # If the header isn't there or is empty, give default answer.
-      return parse_content_type($ct_default) unless defined $ct and length $ct;
+  # If the header isn't there or is empty, give default answer.
+  return parse_content_type($ct_default) unless defined $ct and length $ct;
 
-      # It is also recommend (sic.) that this default be assumed when a
-      # syntactically invalid Content-Type header field is encountered.
-      return parse_content_type($ct_default)
-          unless $ct =~ m[ ^ ($type) / ($subtype) \s* ($params)? $ ]x;
+  # It is also recommend (sic.) that this default be assumed when a
+  # syntactically invalid Content-Type header field is encountered.
+  return parse_content_type($ct_default)
+    unless $ct =~ m[ ^ ($type_re) / ($type_re) \s* ($params)? $ ]x;
 
-      my ($type, $subtype) = (lc $1, lc $2);
-      return {
-          type       => $type,
-          subtype    => $subtype,
-          attributes => _parse_attributes($3),
+  my ($type, $subtype) = (lc $1, lc $2);
+  return {
+    type       => $type,
+    subtype    => $subtype,
+    attributes => _parse_attributes($3),
 
-          # This is dumb.  Really really dumb.  For backcompat. -- rjbs,
-          # 2013-08-10
-          discrete   => $type,
-          composite  => $subtype,
-      };
-  }
+    # This is dumb.  Really really dumb.  For backcompat. -- rjbs,
+    # 2013-08-10
+    discrete   => $type,
+    composite  => $subtype,
+  };
 }
 
 sub _parse_attributes {
@@ -88,15 +85,15 @@ sub _parse_attributes {
 
 sub _extract_ct_attribute_value { # EXPECTS AND MODIFIES $_
     my $value;
-    while ($_) { 
+    while ($_) {
         s/^([^$tspecials]+)// and $value .= $1;
         s/^($extract_quoted)// and do {
             my $sub = $1; $sub =~ s/^["']//; $sub =~ s/["']$//;
             $value .= $sub;
         };
         /^;/ and last;
-        /^([$tspecials])/ and do { 
-            carp "Unquoted $1 not allowed in Content-Type!"; 
+        /^([$tspecials])/ and do {
+            carp "Unquoted $1 not allowed in Content-Type!";
             return;
         }
     }
