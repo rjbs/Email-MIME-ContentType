@@ -34,11 +34,13 @@ my $ct_default = 'text/plain; charset=us-ascii';
 my $extract_quoted =
     qr/(?:\"(?:[^\\\"]*(?:\\.[^\\\"]*)*)\"|\'(?:[^\\\']*(?:\\.[^\\\']*)*)\')/;
 
-  sub parse_content_type { # XXX This does not take note of RFC2822 comments
+  sub parse_content_type {
       my $ct = shift;
 
       # If the header isn't there or is empty, give default answer.
       return parse_content_type($ct_default) unless defined $ct and length $ct;
+
+      _clean_comments($ct);
 
       # It is also recommend (sic.) that this default be assumed when a
       # syntactically invalid Content-Type header field is encountered.
@@ -49,6 +51,7 @@ my $extract_quoted =
 
       my ($type, $subtype) = (lc $1, lc $2);
 
+      _clean_comments($ct);
       $ct =~ s/\s+$//;
       my $params = $ct;
 
@@ -64,6 +67,28 @@ my $extract_quoted =
       };
   }
 
+sub _clean_comments {
+    my $ret = ($_[0] =~ s/^\s+//);
+    while (length $_) {
+        last unless $_[0] =~ s/^\(//;
+        my $level = 1;
+        while (length $_) {
+            my $ch = substr $_[0], 0, 1, '';
+            if ($ch eq '(') {
+                $level++;
+            } elsif ($ch eq ')') {
+                $level--;
+                last if $level == 0;
+            } elsif ($ch eq '\\') {
+                substr $_[0], 0, 1, '';
+            }
+        }
+        carp "Unbalanced comment in Content-Type" if $level != 0 and $STRICT_PARAMS;
+        $ret |= ($_[0] =~ s/^\s+//);
+    }
+    return $ret;
+}
+
 sub _parse_attributes {
     local $_ = shift;
     my $attribs = {};
@@ -72,7 +97,7 @@ sub _parse_attributes {
             carp "Missing semicolon before Content-Type parameter '$_'";
             return $attribs;
         };
-        s/^\s+//;
+        _clean_comments($_);
         unless (length $_) {
             # Some mail software generates a Content-Type like this:
             # "Content-Type: text/plain;"
@@ -95,9 +120,10 @@ sub _parse_attributes {
             }
             $attribute = lc $1;
         }
-        s/^\s+//;
+        _clean_comments($_);
         my $value = _extract_ct_attribute_value();
         $attribs->{$attribute} = $value;
+        _clean_comments($_);
     }
     return $attribs;
 }
@@ -115,7 +141,7 @@ sub _extract_ct_attribute_value { # EXPECTS AND MODIFIES $_
             carp "Unquoted '$char' not allowed in Content-Type";
             return;
         }
-        my $erased = s/^\s+//;
+        my $erased = _clean_comments($_);
         last if !length $_ or /^;/;
         if ($STRICT_PARAMS) {
             my $char = substr $_, 0, 1;
