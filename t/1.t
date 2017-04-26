@@ -52,7 +52,82 @@ my %ct_tests = (
             'attributes' => {
                 'boundary' => '=_0c5bb6a163fe08545fb49e4a=73e476c3-cd5a-5ba3-b910-2e1563f157b8_='
             }
-    }
+    },
+
+    'message/external-body; access-type=URL; URL*0="ftp://"; URL*1="cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar"' => {
+            'type' => 'message',
+            'subtype' => 'external-body',
+            'attributes' => {
+                'access-type' => 'URL',
+                'url' => 'ftp://cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar',
+            }
+    },
+    'message/external-body; access-type=URL; URL="ftp://cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar"' => {
+            'type' => 'message',
+            'subtype' => 'external-body',
+            'attributes' => {
+                'access-type' => 'URL',
+                'url' => 'ftp://cs.utk.edu/pub/moore/bulk-mailer/bulk-mailer.tar',
+            }
+    },
+
+    "application/x-stuff; title*=us-ascii'en-us'This%20is%20%2A%2A%2Afun%2A%2A%2A" => {
+            'type' => 'application',
+            'subtype' => 'x-stuff',
+            'attributes' => {
+                'title' => 'This is ***fun***'
+            }
+    },
+    "application/x-stuff; title*=us-ascii''This%20is%20%2A%2A%2Afun%2A%2A%2A" => {
+            'type' => 'application',
+            'subtype' => 'x-stuff',
+            'attributes' => {
+                'title' => 'This is ***fun***'
+            }
+    },
+    "application/x-stuff; title*=''This%20is%20%2A%2A%2Afun%2A%2A%2A" => {
+            'type' => 'application',
+            'subtype' => 'x-stuff',
+            'attributes' => {
+                'title' => 'This is ***fun***'
+            }
+    },
+    "application/x-stuff; title*='en-us'This%20is%20%2A%2A%2Afun%2A%2A%2A" => {
+            'type' => 'application',
+            'subtype' => 'x-stuff',
+            'attributes' => {
+                'title' => 'This is ***fun***'
+            }
+    },
+
+    q(application/x-stuff; title*0*=us-ascii'en'This%20is%20even%20more%20; title*1*=%2A%2A%2Afun%2A%2A%2A%20; title*2="isn't it!") => {
+            'type' => 'application',
+            'subtype' => 'x-stuff',
+            'attributes' => {
+                'title' => "This is even more ***fun*** isn't it!"
+            }
+    },
+    q(application/x-stuff; title*0*='en'This%20is%20even%20more%20; title*1*=%2A%2A%2Afun%2A%2A%2A%20; title*2="isn't it!") => {
+            'type' => 'application',
+            'subtype' => 'x-stuff',
+            'attributes' => {
+                'title' => "This is even more ***fun*** isn't it!"
+            }
+    },
+    q(application/x-stuff; title*0*=''This%20is%20even%20more%20; title*1*=%2A%2A%2Afun%2A%2A%2A%20; title*2="isn't it!") => {
+            'type' => 'application',
+            'subtype' => 'x-stuff',
+            'attributes' => {
+                'title' => "This is even more ***fun*** isn't it!"
+            }
+    },
+    q(application/x-stuff; title*0*=us-ascii''This%20is%20even%20more%20; title*1*=%2A%2A%2Afun%2A%2A%2A%20; title*2="isn't it!") => {
+            'type' => 'application',
+            'subtype' => 'x-stuff',
+            'attributes' => {
+                'title' => "This is even more ***fun*** isn't it!"
+            }
+    },
 );
 
 my %non_strict_ct_tests = (

@@ -4,6 +4,7 @@ package Email::MIME::ContentType;
 # ABSTRACT: Parse a MIME Content-Type Header
 
 use Carp;
+use Encode 2.87 qw(find_mime_encoding);
 use Exporter 5.57 'import';
 our @EXPORT = qw(parse_content_type);
 
@@ -24,6 +25,25 @@ our @EXPORT = qw(parse_content_type);
     }
   };
 
+
+  # Content-Type: application/x-stuff;
+  #  title*0*=us-ascii'en'This%20is%20even%20more%20;
+  #  title*1*=%2A%2A%2Afun%2A%2A%2A%20;
+  #  title*2="isn't it!"
+  my $ct = q(application/x-stuff;
+   title*0*=us-ascii'en'This%20is%20even%20more%20;
+   title*1*=%2A%2A%2Afun%2A%2A%2A%20;
+   title*2="isn't it!");
+  my $data = parse_content_type($ct);
+
+  $data = {
+    type       => "application",
+    subtype    => "x-stuff",
+    attributes => {
+      title => "This is even more ***fun*** isn't it!"
+    }
+  };
+
 =cut
 
 our $STRICT_PARAMS = 1;
@@ -33,6 +53,9 @@ my $token = qr/[^$tspecials \x01-\x08\x0B\x0C\x0E\x1F]+/;
 my $ct_default = 'text/plain; charset=us-ascii';
 my $extract_quoted =
     qr/(?:\"(?:[^\\\"]*(?:\\.[^\\\"]*)*)\"|\'(?:[^\\\']*(?:\\.[^\\\']*)*)\')/;
+my $re_charset = qr/[!"#\$%&'+\-0-9A-Z\\\^_`a-z\{\|\}~]+/;
+my $re_language = qr/[A-Za-z]{1,8}(?:-[0-9A-Za-z]{1,8})*/;
+my $exvalue = qr/($re_charset)?'(?:$re_language)?'(.*)/;
 
 sub parse_content_type {
     my $ct = shift;
@@ -53,12 +76,12 @@ sub parse_content_type {
 
     _clean_comments($ct);
     $ct =~ s/\s+$//;
-    my $params = $ct;
+    my $attributes = _process_rfc2231(_parse_attributes($ct));
 
     return {
         type       => $type,
         subtype    => $subtype,
-        attributes => _parse_attributes($params),
+        attributes => $attributes,
 
         # This is dumb.  Really really dumb.  For backcompat. -- rjbs,
         # 2013-08-10
@@ -87,6 +110,42 @@ sub _clean_comments {
         $ret |= ($_[0] =~ s/^\s+//);
     }
     return $ret;
+}
+
+sub _process_rfc2231 {
+    my ($attribs) = @_;
+    my %cont;
+    my %encoded;
+    foreach (keys %{$attribs}) {
+        next unless $_ =~ m/^(.*)\*(\d+)\*?$/;
+        my ($attr, $sec) = ($1, $2);
+        $cont{$attr}->[$sec] = $attribs->{$_};
+        $encoded{$attr}->[$sec] = 1 if $_ =~ m/\*$/;
+        delete $attribs->{$_};
+    }
+    foreach (keys %cont) {
+        my $key = $_;
+        $key .= '*' if $encoded{$_};
+        $attribs->{$key} = join '', @{$cont{$_}};
+    }
+    foreach (keys %{$attribs}) {
+        next unless $_ =~ m/^(.*)\*$/;
+        my $key = $1;
+        next unless $attribs->{$_} =~ m/^$exvalue$/;
+        my ($charset, $value) = ($1, $2);
+        $value =~ s/%([0-9A-Fa-f]{2})/pack('C', hex($1))/eg;
+        if (length $charset) {
+            my $enc = find_mime_encoding($charset);
+            if (defined $enc) {
+                $value = $enc->decode($value);
+            } else {
+                carp "Unknown charset '$charset' in Content-Type value";
+            }
+        }
+        $attribs->{$key} = $value;
+        delete $attribs->{$_};
+    }
+    return $attribs;
 }
 
 sub _parse_attributes {
@@ -165,8 +224,9 @@ sub _extract_ct_attribute_value { # EXPECTS AND MODIFIES $_
 This routine is exported by default.
 
 This routine parses email content type headers according to section 5.1 of RFC
-2045. It returns a hash as above, with entries for the type, the subtype, and a
-hash of attributes.
+2045 and also RFC 2231 (Character Set and Parameter Continuations).  It returns
+a hash as above, with entries for the C<type>, the C<subtype>, and a hash of
+C<attributes>.
 
 For backward compatibility with a really unfortunate misunderstanding of RFC
 2045 by the early implementors of this module, C<discrete> and C<composite> are
