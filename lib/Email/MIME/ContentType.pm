@@ -29,15 +29,10 @@ our @EXPORT = qw(parse_content_type);
 our $STRICT_PARAMS = 1;
 
 my $tspecials = quotemeta '()<>@,;:\\"/[]?=';
+my $token = qr/[^$tspecials \x01-\x08\x0B\x0C\x0E\x1F]+/;
 my $ct_default = 'text/plain; charset=us-ascii';
 my $extract_quoted =
     qr/(?:\"(?:[^\\\"]*(?:\\.[^\\\"]*)*)\"|\'(?:[^\\\']*(?:\\.[^\\\']*)*)\')/;
-
-# For documentation, really:
-{
-  my $type    = qr/[^$tspecials]+/;
-  my $subtype = qr/[^$tspecials]+/;
-  my $params  = qr/;.*/;
 
   sub parse_content_type { # XXX This does not take note of RFC2822 comments
       my $ct = shift;
@@ -47,14 +42,20 @@ my $extract_quoted =
 
       # It is also recommend (sic.) that this default be assumed when a
       # syntactically invalid Content-Type header field is encountered.
-      return parse_content_type($ct_default)
-          unless $ct =~ m[ ^ ($type) / ($subtype) \s* ($params)? $ ]x;
+      unless ($ct =~ s/^($token)\/($token)//) {
+          carp "Invalid Content-Type '$ct'";
+          return parse_content_type($ct_default);
+      }
 
       my ($type, $subtype) = (lc $1, lc $2);
+
+      $ct =~ s/\s+$//;
+      my $params = $ct;
+
       return {
           type       => $type,
           subtype    => $subtype,
-          attributes => _parse_attributes($3),
+          attributes => _parse_attributes($params),
 
           # This is dumb.  Really really dumb.  For backcompat. -- rjbs,
           # 2013-08-10
@@ -62,24 +63,39 @@ my $extract_quoted =
           composite  => $subtype,
       };
   }
-}
 
 sub _parse_attributes {
     local $_ = shift;
     my $attribs = {};
-    while ($_) {
-        s/^;//;
-        s/^\s+// and next;
-        s/\s+$//;
-        unless (s/^([^$tspecials]+)=\s*//) {
-          # We check for $_'s truth because some mail software generates a
-          # Content-Type like this: "Content-Type: text/plain;"
-          # RFC 1521 section 3 says a parameter must exist if there is a
-          # semicolon.
-          carp "Illegal Content-Type parameter $_" if $STRICT_PARAMS and $_;
-          return $attribs;
+    while (length $_) {
+        s/^;// or $STRICT_PARAMS and do {
+            carp "Missing semicolon before Content-Type parameter '$_'";
+            return $attribs;
+        };
+        s/^\s+//;
+        unless (length $_) {
+            # Some mail software generates a Content-Type like this:
+            # "Content-Type: text/plain;"
+            # RFC 1521 section 3 says a parameter must exist if there is a
+            # semicolon.
+            carp "Extra semicolon after last Content-Type parameter" if $STRICT_PARAMS;
+            return $attribs;
         }
-        my $attribute = lc $1;
+        my $attribute;
+        if (s/^($token)=//) {
+            $attribute = lc $1;
+        } else {
+            if ($STRICT_PARAMS) {
+                carp "Illegal Content-Type parameter '$_'";
+                return $attribs;
+            }
+            unless (s/^([^;=\s]+)\s*=//) {
+                carp "Cannot parse Content-Type parameter '$_'";
+                return $attribs;
+            }
+            $attribute = lc $1;
+        }
+        s/^\s+//;
         my $value = _extract_ct_attribute_value();
         $attribs->{$attribute} = $value;
     }
@@ -88,17 +104,28 @@ sub _parse_attributes {
 
 sub _extract_ct_attribute_value { # EXPECTS AND MODIFIES $_
     my $value;
-    while ($_) { 
-        s/^([^$tspecials]+)// and $value .= $1;
-        s/^($extract_quoted)// and do {
+    while (length $_) {
+        if (s/^($token)//) {
+            $value .= $1;
+        } elsif (s/^($extract_quoted)//) {
             my $sub = $1; $sub =~ s/^["']//; $sub =~ s/["']$//;
             $value .= $sub;
-        };
-        /^;/ and last;
-        /^([$tspecials])/ and do { 
-            carp "Unquoted $1 not allowed in Content-Type!"; 
+        } elsif ($STRICT_PARAMS) {
+            my $char = substr $_, 0, 1;
+            carp "Unquoted '$char' not allowed in Content-Type";
             return;
         }
+        my $erased = s/^\s+//;
+        last if !length $_ or /^;/;
+        if ($STRICT_PARAMS) {
+            my $char = substr $_, 0, 1;
+            carp "Extra '$char' found after Content-Type parameter";
+            return;
+        }
+        if ($erased) {
+            $value .= ' ';
+        }
+        $value .= substr $_, 0, 1, '';
     }
     return $value;
 }
