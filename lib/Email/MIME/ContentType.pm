@@ -123,6 +123,8 @@ sub _extract_ct_attribute_value { # EXPECTS AND MODIFIES $_
             return;
         }
         if ($erased) {
+            # Sometimes semicolon is missing, so check for = char
+            last if m/^$token=/;
             $value .= ' ';
         }
         $value .= substr $_, 0, 1, '';
