@@ -34,38 +34,38 @@ my $ct_default = 'text/plain; charset=us-ascii';
 my $extract_quoted =
     qr/(?:\"(?:[^\\\"]*(?:\\.[^\\\"]*)*)\"|\'(?:[^\\\']*(?:\\.[^\\\']*)*)\')/;
 
-  sub parse_content_type {
-      my $ct = shift;
+sub parse_content_type {
+    my $ct = shift;
 
-      # If the header isn't there or is empty, give default answer.
-      return parse_content_type($ct_default) unless defined $ct and length $ct;
+    # If the header isn't there or is empty, give default answer.
+    return parse_content_type($ct_default) unless defined $ct and length $ct;
 
-      _clean_comments($ct);
+    _clean_comments($ct);
 
-      # It is also recommend (sic.) that this default be assumed when a
-      # syntactically invalid Content-Type header field is encountered.
-      unless ($ct =~ s/^($token)\/($token)//) {
-          carp "Invalid Content-Type '$ct'";
-          return parse_content_type($ct_default);
-      }
+    # It is also recommend (sic.) that this default be assumed when a
+    # syntactically invalid Content-Type header field is encountered.
+    unless ($ct =~ s/^($token)\/($token)//) {
+        carp "Invalid Content-Type '$ct'";
+        return parse_content_type($ct_default);
+    }
 
-      my ($type, $subtype) = (lc $1, lc $2);
+    my ($type, $subtype) = (lc $1, lc $2);
 
-      _clean_comments($ct);
-      $ct =~ s/\s+$//;
-      my $params = $ct;
+    _clean_comments($ct);
+    $ct =~ s/\s+$//;
+    my $params = $ct;
 
-      return {
-          type       => $type,
-          subtype    => $subtype,
-          attributes => _parse_attributes($params),
+    return {
+        type       => $type,
+        subtype    => $subtype,
+        attributes => _parse_attributes($params),
 
-          # This is dumb.  Really really dumb.  For backcompat. -- rjbs,
-          # 2013-08-10
-          discrete   => $type,
-          composite  => $subtype,
-      };
-  }
+        # This is dumb.  Really really dumb.  For backcompat. -- rjbs,
+        # 2013-08-10
+        discrete   => $type,
+        composite  => $subtype,
+    };
+}
 
 sub _clean_comments {
     my $ret = ($_[0] =~ s/^\s+//);
