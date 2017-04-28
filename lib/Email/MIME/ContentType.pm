@@ -193,7 +193,10 @@ sub _extract_ct_attribute_value { # EXPECTS AND MODIFIES $_
         if (s/^($token)//) {
             $value .= $1;
         } elsif (s/^($extract_quoted)//) {
-            my $sub = $1; $sub =~ s/^["']//; $sub =~ s/["']$//;
+            my $sub = $1;
+            $sub =~ s/^["']//;
+            $sub =~ s/["']$//;
+            $sub =~ s/\\(.)/$1/g;
             $value .= $sub;
         } elsif ($STRICT_PARAMS) {
             my $char = substr $_, 0, 1;

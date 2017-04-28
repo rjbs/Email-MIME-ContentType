@@ -128,6 +128,15 @@ my %ct_tests = (
                 'title' => "This is even more ***fun*** isn't it!"
             }
     },
+
+    'text/plain; attribute="value\"value\\\\value\(value\>\<\)\@\,\;\:\/\]\[\?\=value value"; charset=us-ascii' => {
+            'type' => 'text',
+            'subtype' => 'plain',
+            'attributes' => {
+                'attribute' => 'value"value\\value(value><)@,;:/][?=value value',
+                'charset' => 'us-ascii',
+            },
+    },
 );
 
 my %non_strict_ct_tests = (
