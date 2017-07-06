@@ -1,6 +1,11 @@
 Revision history for Perl extension Email::MIME::ContentType
 
 {{$NEXT}}
+        - better parsing all around, thanks to Pali Rohár:
+        - support for RFC 2231 (character set and parameter continuations)
+        - support for RFC 2822 comments
+        - we only Carp if header-parsing fails now
+        - we're more lenient in dealing with spaces around tokens
 
 1.018     2015-04-07 19:46:00-04:00 America/New_York
         - cope with space between "=" and parameter values, like:
