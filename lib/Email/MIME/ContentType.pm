@@ -76,7 +76,13 @@ sub parse_content_type {
 
     _clean_comments($ct);
     $ct =~ s/\s+$//;
-    my $attributes = _process_rfc2231(_parse_attributes($ct));
+
+    my $attributes = {};
+    if ($STRICT_PARAMS and length $ct and $ct !~ /^;/) {
+        carp "Missing semicolon before first Content-Type parameter '$ct'";
+    } else {
+        $attributes = _process_rfc2231(_parse_attributes($ct));
+    }
 
     return {
         type       => $type,
@@ -150,6 +156,7 @@ sub _process_rfc2231 {
 
 sub _parse_attributes {
     local $_ = shift;
+    substr($_, 0, 0, '; ') if length $_ and $_ !~ /^;/;
     my $attribs = {};
     while (length $_) {
         s/^;// or $STRICT_PARAMS and do {
