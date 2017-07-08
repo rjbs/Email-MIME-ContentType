@@ -92,10 +92,10 @@ sub parse_content_type {
 
 sub _clean_comments {
     my $ret = ($_[0] =~ s/^\s+//);
-    while (length $_) {
+    while (length $_[0]) {
         last unless $_[0] =~ s/^\(//;
         my $level = 1;
-        while (length $_) {
+        while (length $_[0]) {
             my $ch = substr $_[0], 0, 1, '';
             if ($ch eq '(') {
                 $level++;

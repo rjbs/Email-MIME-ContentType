@@ -154,6 +154,7 @@ sub test {
     $expect->{discrete}  = $expect->{type};
     $expect->{composite} = $expect->{subtype};
 
+    local $_;
     is_deeply(parse_content_type($string), $expect, $info);
 }
 
