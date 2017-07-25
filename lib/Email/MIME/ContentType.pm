@@ -63,6 +63,7 @@ sub parse_content_type {
     # If the header isn't there or is empty, give default answer.
     return parse_content_type($ct_default) unless defined $ct and length $ct;
 
+    _unfold_lines($ct);
     _clean_comments($ct);
 
     # It is also recommend (sic.) that this default be assumed when a
@@ -94,6 +95,10 @@ sub parse_content_type {
         discrete   => $type,
         composite  => $subtype,
     };
+}
+
+sub _unfold_lines {
+    $_[0] =~ s/(?:\r\n|[\r\n])(?=[ \t])//g;
 }
 
 sub _clean_comments {
