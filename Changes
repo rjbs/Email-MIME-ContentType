@@ -2,6 +2,10 @@ Revision history for Perl extension Email::MIME::ContentType
 
 {{$NEXT}}
 
+1.020     2017-07-25 12:39:31-04:00 America/New_York
+        - unbreak Email::MIME (which violates encapsulation (again))
+        - eliminate some @_ / $_ confusion
+
 1.019     2017-07-06 16:06:19-04:00 America/New_York (TRIAL RELEASE)
         - better parsing all around, thanks to Pali Rohár:
         - support for RFC 2231 (character set and parameter continuations)
