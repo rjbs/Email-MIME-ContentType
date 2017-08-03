@@ -6,7 +6,7 @@ package Email::MIME::ContentType;
 use Carp;
 use Encode 2.87 qw(find_mime_encoding);
 use Exporter 5.57 'import';
-our @EXPORT = qw(parse_content_type);
+our @EXPORT = qw(parse_content_type parse_content_disposition);
 
 =head1 SYNOPSIS
 
@@ -107,6 +107,41 @@ sub parse_content_type {
     };
 }
 
+my $cd_default = 'attachment';
+
+sub parse_content_disposition {
+    my $cd = shift;
+
+    return parse_content_disposition($cd_default) unless defined $cd and length $cd;
+
+    _unfold_lines($cd);
+    _clean_comments($cd);
+
+    unless ($cd =~ s/^($re_token)//) {
+        unless ($STRICT_PARAMS and $cd =~ s/^($re_token_non_strict)//) {
+            carp "Invalid Content-Disposition '$cd'";
+            return parse_content_disposition($cd_default);
+        }
+    }
+
+    my $type = lc $1;
+
+    _clean_comments($cd);
+    $cd =~ s/\s+$//;
+
+    my $attributes = {};
+    if ($STRICT_PARAMS and length $cd and $cd !~ /^;/) {
+        carp "Missing semicolon before first Content-Disposition parameter '$cd'";
+    } else {
+        $attributes = _process_rfc2231(_parse_attributes($cd));
+    }
+
+    return {
+        type       => $type,
+        attributes => $attributes,
+    };
+}
+
 sub _unfold_lines {
     $_[0] =~ s/(?:\r\n|[\r\n])(?=[ \t])//g;
 }
@@ -127,7 +162,7 @@ sub _clean_comments {
                 substr $_[0], 0, 1, '';
             }
         }
-        carp "Unbalanced comment in Content-Type" if $level != 0 and $STRICT_PARAMS;
+        carp "Unbalanced comment" if $level != 0 and $STRICT_PARAMS;
         $ret |= ($_[0] =~ s/^\s+//);
     }
     return $ret;
@@ -160,7 +195,7 @@ sub _process_rfc2231 {
             if (defined $enc) {
                 $value = $enc->decode($value);
             } else {
-                carp "Unknown charset '$charset' in Content-Type value";
+                carp "Unknown charset '$charset' in attribute '$key' value";
             }
         }
         $attribs->{$key} = $value;
@@ -175,7 +210,7 @@ sub _parse_attributes {
     my $attribs = {};
     while (length $_) {
         s/^;// or $STRICT_PARAMS and do {
-            carp "Missing semicolon before Content-Type parameter '$_'";
+            carp "Missing semicolon before parameter '$_'";
             return $attribs;
         };
         _clean_comments($_);
@@ -184,7 +219,7 @@ sub _parse_attributes {
             # "Content-Type: text/plain;"
             # RFC 1521 section 3 says a parameter must exist if there is a
             # semicolon.
-            carp "Extra semicolon after last Content-Type parameter" if $STRICT_PARAMS;
+            carp "Extra semicolon after last parameter" if $STRICT_PARAMS;
             return $attribs;
         }
         my $attribute;
@@ -192,28 +227,28 @@ sub _parse_attributes {
             $attribute = lc $1;
         } else {
             if ($STRICT_PARAMS) {
-                carp "Illegal Content-Type parameter '$_'";
+                carp "Illegal parameter '$_'";
                 return $attribs;
             }
             if (s/^($re_token_non_strict)=//) {
                 $attribute = lc $1;
             } else {
                 unless (s/^([^;=\s]+)\s*=//) {
-                    carp "Cannot parse Content-Type parameter '$_'";
+                    carp "Cannot parse parameter '$_'";
                     return $attribs;
                 }
                 $attribute = lc $1;
             }
         }
         _clean_comments($_);
-        my $value = _extract_ct_attribute_value();
+        my $value = _extract_attribute_value();
         $attribs->{$attribute} = $value;
         _clean_comments($_);
     }
     return $attribs;
 }
 
-sub _extract_ct_attribute_value { # EXPECTS AND MODIFIES $_
+sub _extract_attribute_value { # EXPECTS AND MODIFIES $_
     my $value;
     while (length $_) {
         if (s/^($re_token)//) {
@@ -224,7 +259,7 @@ sub _extract_ct_attribute_value { # EXPECTS AND MODIFIES $_
             $value .= $sub;
         } elsif ($STRICT_PARAMS) {
             my $char = substr $_, 0, 1;
-            carp "Unquoted '$char' not allowed in Content-Type";
+            carp "Unquoted '$char' not allowed";
             return;
         } elsif (s/^($re_token_non_strict)//) {
             $value .= $1;
@@ -237,7 +272,7 @@ sub _extract_ct_attribute_value { # EXPECTS AND MODIFIES $_
         last if !length $_ or /^;/;
         if ($STRICT_PARAMS) {
             my $char = substr $_, 0, 1;
-            carp "Extra '$char' found after Content-Type parameter";
+            carp "Extra '$char' found after parameter";
             return;
         }
         if ($erased) {
