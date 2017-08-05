@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 package Email::MIME::ContentType;
-# ABSTRACT: Parse a MIME Content-Type Header
+# ABSTRACT: Parse a MIME Content-Type or Content-Disposition Header
 
 use Carp;
 use Encode 2.87 qw(find_mime_encoding);
@@ -41,6 +41,20 @@ our @EXPORT = qw(parse_content_type parse_content_disposition);
     subtype    => "x-stuff",
     attributes => {
       title => "This is even more ***fun*** isn't it!"
+    }
+  };
+
+  # Content-Disposition: attachment; filename=genome.jpeg;
+  #   modification-date="Wed, 12 Feb 1997 16:29:51 -0500"
+  my $cd = q(attachment; filename=genome.jpeg;
+    modification-date="Wed, 12 Feb 1997 16:29:51 -0500");
+  my $data = parse_content_disposition($cd);
+
+  $data = {
+    type       => "attachment",
+    attributes => {
+      filename            => "genome.jpeg",
+      "modification-date" => "Wed, 12 Feb 1997 16:29:51 -0500"
     }
   };
 
@@ -301,6 +315,14 @@ For backward compatibility with a really unfortunate misunderstanding of RFC
 also present in the returned hashref, with the values of C<type> and C<subtype>
 respectively.
 
+=func parse_content_disposition
+
+This routine is exported by default.
+
+This routine parses email Content-Disposition headers according to RFC 2183 and
+RFC 2231.  It returns a hash as above, with entries for the C<type>, and a hash
+of C<attributes>.
+
 =head1 WARNINGS
 
 This is not a valid content-type header, according to both RFC 1521 and RFC
@@ -312,5 +334,7 @@ If a semicolon appears, a parameter must.  C<parse_content_type> will carp if
 it encounters a header of this type, but you can suppress this by setting
 C<$Email::MIME::ContentType::STRICT_PARAMS> to a false value.  Please consider
 localizing this assignment!
+
+Same applies for C<parse_content_disposition>.
 
 =cut
