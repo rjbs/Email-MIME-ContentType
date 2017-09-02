@@ -4,9 +4,11 @@ package Email::MIME::ContentType;
 # ABSTRACT: Parse a MIME Content-Type or Content-Disposition Header
 
 use Carp;
-use Encode 2.87 qw(find_mime_encoding);
+use Encode 2.87 qw(encode find_mime_encoding);
 use Exporter 5.57 'import';
-our @EXPORT = qw(parse_content_type parse_content_disposition);
+use Text::Unidecode;
+
+our @EXPORT = qw(parse_content_type parse_content_disposition build_content_type build_content_disposition);
 
 =head1 SYNOPSIS
 
@@ -154,6 +156,140 @@ sub parse_content_disposition {
         type       => $type,
         attributes => $attributes,
     };
+}
+
+my $re_invalid_for_quoted_value = qr/[\x00-\x08\x0A-\x1F\x7F-\xFF]/; # non-US-ASCII and CTLs without SPACE and TAB
+my $re_escape_extended_value = qr/[\x00-\x20\x7F-\xFF\*'%()<>@,;:\\"\/\[\]?=]/; # non-US-ASCII, SPACE, CTLs, *'% and tspecials ()<>@,;:\\"/[]?=
+
+sub build_content_type {
+    my $ct = shift;
+
+    croak 'Missing Content-Type \'type\' parameter' unless exists $ct->{type};
+    croak 'Missing Content-Type \'subtype\' parameter' unless exists $ct->{subtype};
+
+    croak 'Invalid Content-Type \'type\' parameter' if $ct->{type} !~ /^(?:$re_token)*$/;
+    croak 'Invalid Content-Type \'subtype\' parameter' if $ct->{subtype} !~ /^(?:$re_token)*$/;
+
+    croak 'Too long Content-Type \'type\' and \'subtype\' parameters' if length($ct->{type}) + length($ct->{subtype}) > 76;
+
+    my ($extra) = grep !/(?:type|subtype|attributes)/, sort keys %{$ct};
+    croak "Extra Content-Type '$extra' parameter" if defined $extra;
+
+    my $ret = $ct->{type} . '/' . $ct->{subtype};
+    my $attrs = exists $ct->{attributes} ? _build_attributes($ct->{attributes}) : '';
+    $ret .= "; $attrs" if length($attrs);
+    return $ret;
+}
+
+sub build_content_disposition {
+    my $cd = shift;
+
+    croak 'Missing Content-Type \'type\' parameter' unless exists $cd->{type};
+
+    croak 'Invalid Content-Type \'type\' parameter' if $cd->{type} !~ /^(?:$re_token)*$/;
+
+    croak 'Too long Content-Type \'type\' parameter' if length($cd->{type}) > 77;
+
+    my ($extra) = grep !/(?:type|attributes)/, sort keys %{$cd};
+    croak "Extra Content-Type '$extra' parameter" if defined $extra;
+
+    my $ret = $cd->{type};
+    my $attrs = exists $cd->{attributes} ? _build_attributes($cd->{attributes}) : '';
+    $ret .= "; $attrs" if length($attrs);
+    return $ret;
+}
+
+sub _build_attributes {
+    my $attributes = shift;
+
+    my $ret = '';
+
+    foreach my $key (sort keys %{$attributes}) {
+
+        my $value = $attributes->{$key};
+        my $ascii_value = $value;
+        my @continuous_value;
+        my $extended_value_charset;
+
+        croak "Invalid attribute '$key'" if $key =~ /$re_escape_extended_value/; # complement to attribute-char in 8bit space
+        croak "Undefined attribute '$key'" unless defined $value;
+
+        if ($value =~ /\P{ASCII}/) {
+            $ascii_value = unidecode($value);
+            $ascii_value =~ s/\P{ASCII}/_/g;
+            @continuous_value = map { encode('UTF-8', $_) } split //, $value;
+            $extended_value_charset = 'UTF-8';
+        }
+
+        if ($ascii_value !~ /^(?:$re_token)*$/ or $ascii_value =~ /'/) {
+            if ($ascii_value =~ /$re_invalid_for_quoted_value/) {
+                @continuous_value = split //, $value unless @continuous_value;
+                $ascii_value =~ s/[\n\r]/ /g;
+                $ascii_value =~ s/$re_invalid_for_quoted_value/_/g;
+            }
+            $ascii_value =~ s/(["\\])/\\$1/g;
+            $ascii_value = "\"$ascii_value\"";
+        }
+
+        if (length($key) + length($ascii_value) > 75) { # length(" $key=$ascii_value;") > 78
+            croak "Too long attribute '$key'" if length($key) > 71; # length(" $key=...;") > 78
+            my $pos = $ascii_value =~ /"$/ ? 71 : 72;
+            substr($ascii_value, $pos - length($key), length($ascii_value) + length($key) - 72, '...');
+            @continuous_value = split //, $value unless @continuous_value;
+        }
+
+        if (@continuous_value) {
+            my $needs_quote;
+            unless (defined $extended_value_charset) {
+                $needs_quote = 1 if grep { $_ !~ /^(?:$re_token)*$/ or $_ =~ /'/ } @continuous_value;
+                $extended_value_charset = 'US-ASCII' if $needs_quote and grep /$re_invalid_for_quoted_value/, @continuous_value;
+            }
+
+            my $add_param_len = 4; # for '; *='
+            if (defined $extended_value_charset) {
+                $_ =~ s/($re_escape_extended_value)/sprintf('%%%02X', ord($1))/eg foreach @continuous_value;
+                substr($continuous_value[0], 0, 0, "$extended_value_charset''");
+                $add_param_len += 1; # for '*' - charset
+            } elsif ($needs_quote) {
+                $_ =~ s/(["\\])/\\$1/g foreach @continuous_value;
+                $add_param_len += 2; # for quotes
+            }
+
+            if ($value =~ /\P{ASCII}/ and length(my $oneparameter = "; $key*=" . join '', @continuous_value) <= 78) {
+                 $ret .= $oneparameter;
+            } else {
+                my $buf = '';
+                my $count = 0;
+                foreach (@continuous_value) {
+                    if (length($key) + length($count) + length($buf) + length($_) + $add_param_len > 78) {
+                        $buf = "\"$buf\"" if $needs_quote;
+                        my $parameter = "; $key*$count";
+                        $parameter .= '*' if defined $extended_value_charset;
+                        $parameter .= "=$buf";
+                        croak "Too long attribute '$key'" if length($parameter) > 78;
+                        $ret .= $parameter;
+                        $buf = '';
+                        $count++;
+                    }
+                    $buf .= $_;
+                }
+                if (length($buf)) {
+                    $buf = "\"$buf\"" if $needs_quote;
+                    my $parameter = "; $key*$count";
+                    $parameter .= '*' if defined $extended_value_charset;
+                    $parameter .= "=$buf";
+                    croak "Too long attribute '$key'" if length($parameter) > 78;
+                    $ret .= $parameter;
+                }
+            }
+        }
+
+        $ret .= "; $key=$ascii_value";
+
+    }
+
+    substr($ret, 0, 2, '') if length $ret;
+    return $ret;
 }
 
 sub _unfold_lines {
