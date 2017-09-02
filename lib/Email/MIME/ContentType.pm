@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 package Email::MIME::ContentType;
-# ABSTRACT: Parse a MIME Content-Type or Content-Disposition Header
+# ABSTRACT: Parse and build a MIME Content-Type or Content-Disposition Header
 
 use Carp;
 use Encode 2.87 qw(encode find_mime_encoding);
@@ -27,6 +27,9 @@ our @EXPORT = qw(parse_content_type parse_content_disposition build_content_type
     }
   };
 
+  my $ct_new = build_content_type($data);
+  # text/plain; charset=us-ascii; format=flowed
+
 
   # Content-Type: application/x-stuff;
   #  title*0*=us-ascii'en'This%20is%20even%20more%20;
@@ -46,6 +49,7 @@ our @EXPORT = qw(parse_content_type parse_content_disposition build_content_type
     }
   };
 
+
   # Content-Disposition: attachment; filename=genome.jpeg;
   #   modification-date="Wed, 12 Feb 1997 16:29:51 -0500"
   my $cd = q(attachment; filename=genome.jpeg;
@@ -59,6 +63,9 @@ our @EXPORT = qw(parse_content_type parse_content_disposition build_content_type
       "modification-date" => "Wed, 12 Feb 1997 16:29:51 -0500"
     }
   };
+
+  my $cd_new = build_content_disposition($data);
+  # attachment; filename=genome.jpeg; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"
 
 =cut
 
@@ -458,6 +465,30 @@ This routine is exported by default.
 This routine parses email Content-Disposition headers according to RFC 2183 and
 RFC 2231.  It returns a hash as above, with entries for the C<type>, and a hash
 of C<attributes>.
+
+=func build_content_type
+
+This routine is exported by default.
+
+This routine builds email Content-Type header according to RFC 2045 and RFC 2231.
+It takes a hash as above, with entries for the C<type>, the C<subtype>, and
+optionally also a hash of C<attributes>.  It returns a string representing
+Content-Type header.  Non-ASCII attributes are encoded to UTF-8 according to
+Character Set section of RFC 2231.  Attribute which has more then 78 ASCII
+characters is split into more attributes accorrding to Parameter Continuations
+of RFC 2231.  For compatibility reasons with clients which do not support
+RFC 2231, output string contains also truncated ASCII version of any too long or
+non-ASCII attribute.  Encoding to ASCII is done via Text::Unidecode module.
+
+=func build_content_disposition
+
+This routine is exported by default.
+
+This routine builds email Content-Disposition header according to RFC 2182 and
+RFC 2231.  It takes a hash as above, with entries for the C<type>, and
+optionally also a hash of C<attributes>.  It returns a string representing
+Content-Disposition header.  Non-ASCII or too long attributes are handled in
+the same way like in L<build_content_type function|/build_content_type>.
 
 =head1 WARNINGS
 
