@@ -187,7 +187,7 @@ sub _process_rfc2231 {
     my %cont;
     my %encoded;
     foreach (keys %{$attribs}) {
-        next unless $_ =~ m/^(.*)\*(\d+)\*?$/;
+        next unless $_ =~ m/^(.*)\*([0-9]+)\*?$/;
         my ($attr, $sec) = ($1, $2);
         $cont{$attr}->[$sec] = $attribs->{$_};
         $encoded{$attr}->[$sec] = 1 if $_ =~ m/\*$/;
