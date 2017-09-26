@@ -220,6 +220,7 @@ sub _process_rfc2231 {
 
 sub _parse_attributes {
     local $_ = shift;
+    return {} unless $_;
     substr($_, 0, 0, '; ') if length $_ and $_ !~ /^;/;
     my $attribs = {};
     while (length $_) {
