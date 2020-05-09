@@ -2,6 +2,15 @@ Revision history for Perl extension Email::MIME::ContentType
 
 {{$NEXT}}
 
+1.023     2020-05-09 14:51:41-04:00 America/New_York (TRIAL RELEASE)
+        - All of this release is thanks to Pali Rohár, who suffered through a
+          long period of waiting while RJBS, the maintainer, let the module
+          languish.  Thank you for your patience, Pali and everybody else.
+
+        - silence an uninitalized value warning
+        - avoid allowing non-Latin digits in numbers
+        - add new functions build_content_type() and build_content_disposition
+
 1.022     2017-08-31 09:16:58-04:00 America/New_York
         - add parse_content_disposition (thanks, Pali Rohár)
 
@@ -58,4 +67,4 @@ Revision history for Perl extension Email::MIME::ContentType
 
 0.01      Wed Jan  7 17:38:23 2004
         - original version; created by h2xs 1.22 with options
-        	-AX -b 5.6.0 -n Email::MIME::ContentType
+          -AX -b 5.6.0 -n Email::MIME::ContentType
