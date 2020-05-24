@@ -2,6 +2,9 @@ Revision history for Perl extension Email::MIME::ContentType
 
 {{$NEXT}}
 
+1.024     2020-05-24 10:19:20-04:00 America/New_York
+        - no changes since stable release
+
 1.023     2020-05-09 14:51:41-04:00 America/New_York (TRIAL RELEASE)
         - All of this release is thanks to Pali Rohár, who suffered through a
           long period of waiting while RJBS, the maintainer, let the module
