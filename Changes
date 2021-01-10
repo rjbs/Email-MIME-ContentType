@@ -2,6 +2,10 @@ Revision history for Perl extension Email::MIME::ContentType
 
 {{$NEXT}}
 
+1.025     2021-01-10 15:28:01-05:00 America/New_York (TRIAL RELEASE)
+        - don't use more memory than necessary to store parts of an encoded
+          parameter (thanks, Pali)
+
 1.024     2020-05-24 10:19:20-04:00 America/New_York
         - no changes since stable release
 
