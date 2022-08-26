@@ -3,7 +3,8 @@ use strict;
 use warnings;
 
 use Test::More 'no_plan';
-BEGIN { use_ok('Email::MIME::ContentType'); }
+
+use Email::MIME::ContentType;
 
 my %cd_tests = (
     'inline' => { type => 'inline', attributes => {} },
