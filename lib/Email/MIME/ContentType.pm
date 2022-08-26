@@ -8,6 +8,11 @@ use Encode 2.87 qw(encode find_mime_encoding);
 use Exporter 5.57 'import';
 use Text::Unidecode;
 
+# Generate stricter output, in unspecified ways.  The one way I plan to start
+# with is that we will not generate both foo*0=x and foo=x versions.
+# -- rjbs, 2022-08-24
+our $STRICT = 0;
+
 our @EXPORT = qw(parse_content_type parse_content_disposition build_content_type build_content_disposition);
 
 =head1 SYNOPSIS
@@ -290,7 +295,9 @@ sub _build_attributes {
       }
     }
 
-    $ret .= "; $key=$ascii_value";
+    if (! @continuous_value || ! $STRICT) {
+      $ret .= "; $key=$ascii_value";
+    }
   }
 
   substr($ret, 0, 2, '') if length $ret;
