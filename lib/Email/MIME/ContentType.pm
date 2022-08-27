@@ -494,9 +494,13 @@ optionally also a hash of C<attributes>.  It returns a string representing
 Content-Type header.  Non-ASCII attributes are encoded to UTF-8 according to
 Character Set section of RFC 2231.  Attribute which has more then 78 ASCII
 characters is split into more attributes accorrding to Parameter Continuations
-of RFC 2231.  For compatibility reasons with clients which do not support
-RFC 2231, output string contains also truncated ASCII version of any too long or
-non-ASCII attribute.  Encoding to ASCII is done via Text::Unidecode module.
+of RFC 2231.
+
+For compatibility reasons with clients which do not support RFC 2231, output
+string contains also truncated ASCII version of any too long or non-ASCII
+attribute.  Encoding to ASCII is done via Text::Unidecode module.  This
+behavior can cause confusion by 2231-compatible MIME implementations, and can
+be disabled by setting C<$Email::MIME::ContentType::STRICT> to true.
 
 =func build_content_disposition
 
