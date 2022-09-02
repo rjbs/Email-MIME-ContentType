@@ -7,11 +7,12 @@ use Test::More 'no_plan';
 use Email::MIME::ContentType;
 
 # The keys are...
-#   input   - the arguments to pass to build_content_disposition
-#   expect  - the C-D header build under lax mode
-#   strict  - the C-D header built under strict mode
+#   input       - the arguments to pass to build_content_disposition
+#   expect      - the C-D header built as usual
+#   no_pre_2231 - the C-D header built without pre-2231 support
 #
-# If "strict" is not specified, the output should be the same in both modes.
+# If "no_pre_2231" is not specified, the output should be the same in both
+# modes.
 my @cd_tests = (
   {
     expect  => 'inline',
@@ -36,7 +37,7 @@ my @cd_tests = (
 
   {
     expect  => q(attachment; filename*=UTF-8''genom%C3%A9.jpeg; filename=genome.jpeg; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
-    strict  => q(attachment; filename*=UTF-8''genom%C3%A9.jpeg; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
+    no_pre_2231  => q(attachment; filename*=UTF-8''genom%C3%A9.jpeg; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
     input   => {
       type => 'attachment',
       attributes => {
@@ -59,7 +60,7 @@ my @cd_tests = (
 
   {
     expect  => q(attachment; filename*0=loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo; filename*1=ong; filename=looooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo...; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
-    strict  => q(attachment; filename*0=loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo; filename*1=ong; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
+    no_pre_2231  => q(attachment; filename*0=loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo; filename*1=ong; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
     input   => {
       type => 'attachment',
       attributes => {
@@ -82,7 +83,7 @@ my @cd_tests = (
 
   {
     expect => q(attachment; filename*0="l\\"oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"; filename*1="ong"; filename="l\"ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo..."; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
-    strict => q(attachment; filename*0="l\\"oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"; filename*1="ong"; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
+    no_pre_2231 => q(attachment; filename*0="l\\"oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"; filename*1="ong"; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
     input => {
       type => 'attachment',
       attributes => {
@@ -94,7 +95,7 @@ my @cd_tests = (
 
   {
     expect  => q(attachment; filename*=UTF-8''%C3%A9loooooooooooooooooooooooooooooooooooooooooooooooooong; filename=eloooooooooooooooooooooooooooooooooooooooooooooooooong; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
-    strict  => q(attachment; filename*=UTF-8''%C3%A9loooooooooooooooooooooooooooooooooooooooooooooooooong; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
+    no_pre_2231  => q(attachment; filename*=UTF-8''%C3%A9loooooooooooooooooooooooooooooooooooooooooooooooooong; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
     input   => {
       type => 'attachment',
       attributes => {
@@ -106,7 +107,7 @@ my @cd_tests = (
 
   {
     expect  => q(attachment; filename*0*=UTF-8''%C3%A9loooooooooooooooooooooooooooooooooooooooooooooooooo; filename*1*=ong; filename=elooooooooooooooooooooooooooooooooooooooooooooooooooong; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
-    strict  => q(attachment; filename*0*=UTF-8''%C3%A9loooooooooooooooooooooooooooooooooooooooooooooooooo; filename*1*=ong; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
+    no_pre_2231  => q(attachment; filename*0*=UTF-8''%C3%A9loooooooooooooooooooooooooooooooooooooooooooooooooo; filename*1*=ong; modification-date="Wed, 12 Feb 1997 16:29:51 -0500"),
     input   => {
       type => 'attachment',
       attributes => {
@@ -118,7 +119,7 @@ my @cd_tests = (
 
   {
     expect  => q(attachment; filename*=UTF-8''%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9; filename=eeeeeeeee),
-    strict  => q(attachment; filename*=UTF-8''%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9),
+    no_pre_2231  => q(attachment; filename*=UTF-8''%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9),
     input   => {
       type => 'attachment',
       attributes => {
@@ -129,7 +130,7 @@ my @cd_tests = (
 
   {
     expect  => q(attachment; filename*0*=UTF-8''%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9; filename*1*=%C3%A9; filename=eeeeeeeeee),
-    strict  => q(attachment; filename*0*=UTF-8''%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9; filename*1*=%C3%A9),
+    no_pre_2231  => q(attachment; filename*0*=UTF-8''%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9; filename*1*=%C3%A9),
     input   => {
       type => 'attachment',
       attributes => {
@@ -161,12 +162,12 @@ sub test {
   $label =~ s/\n/\\n/g;
 
   subtest "$test->{expect}" => sub {
-    for my $strict (0, 1) {
-      local $Email::MIME::ContentType::STRICT = $strict;
+    for my $pre_2231 (0, 1) {
+      local $Email::MIME::ContentType::PRE_2231_FORM = $pre_2231;
 
-      my $type   = $strict ? 'strict' : 'lax';
-      my $expect = $strict ? $test->{$type} // $test->{expect}
-                           : $test->{expect};
+      my $type   = $pre_2231  ? 'default' : 'no_pre_2231';
+      my $expect = $pre_2231  ? $test->{expect}
+                              : $test->{no_pre_2231} // $test->{expect};
 
       my $got = build_content_disposition($input);
       is($got, $expect, "build C-D ($type)");

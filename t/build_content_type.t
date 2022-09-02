@@ -92,7 +92,7 @@ my @ct_tests = (
 
   {
     expect  => q(message/external-body; access-type=URL; url*0="ftp://cs.utk.edu/pub/moore/bulk-mailer/looooooooooooong/bulk-mailer."; url*1="tar"; url="ftp://cs.utk.edu/pub/moore/bulk-mailer/looooooooooooong/bulk-mailer..."),
-    strict  => q(message/external-body; access-type=URL; url*0="ftp://cs.utk.edu/pub/moore/bulk-mailer/looooooooooooong/bulk-mailer."; url*1="tar"),
+    no_pre_2231  => q(message/external-body; access-type=URL; url*0="ftp://cs.utk.edu/pub/moore/bulk-mailer/looooooooooooong/bulk-mailer."; url*1="tar"),
     input   => {
       'type' => 'message',
       'subtype' => 'external-body',
@@ -117,7 +117,7 @@ my @ct_tests = (
 
   {
     expect  => q(application/x-stuff; title*=UTF-8''This%20is%20%2A%2A%2Afun%2A%2A%2A%20%C2%A9; title="This is ***fun*** (c)"),
-    strict  => q(application/x-stuff; title*=UTF-8''This%20is%20%2A%2A%2Afun%2A%2A%2A%20%C2%A9),
+    no_pre_2231  => q(application/x-stuff; title*=UTF-8''This%20is%20%2A%2A%2Afun%2A%2A%2A%20%C2%A9),
     input   => {
       'type' => 'application',
       'subtype' => 'x-stuff',
@@ -129,7 +129,7 @@ my @ct_tests = (
 
   {
     expect  => q(application/x-stuff; title*0*=UTF-8''This%20is%20even%20more%20%2A%2A%2Afun%2A%2A%2A%20%C2%A9%20i; title*1*=sn%27t%20it!; title="This is even more ***fun*** (c) isn't it!"),
-    strict  => q(application/x-stuff; title*0*=UTF-8''This%20is%20even%20more%20%2A%2A%2Afun%2A%2A%2A%20%C2%A9%20i; title*1*=sn%27t%20it!),
+    no_pre_2231  => q(application/x-stuff; title*0*=UTF-8''This%20is%20even%20more%20%2A%2A%2Afun%2A%2A%2A%20%C2%A9%20i; title*1*=sn%27t%20it!),
     input   => {
       'type' => 'application',
       'subtype' => 'x-stuff',
@@ -164,12 +164,12 @@ sub test {
   $label =~ s/\n/\\n/g;
 
   subtest "$test->{expect}" => sub {
-    for my $strict (0, 1) {
-      local $Email::MIME::ContentType::STRICT = $strict;
+    for my $pre_2231 (0, 1) {
+      local $Email::MIME::ContentType::PRE_2231_FORM = $pre_2231;
 
-      my $type   = $strict ? 'strict' : 'lax';
-      my $expect = $strict ? $test->{$type} // $test->{expect}
-                           : $test->{expect};
+      my $type   = $pre_2231  ? 'default' : 'no_pre_2231';
+      my $expect = $pre_2231  ? $test->{expect}
+                              : $test->{no_pre_2231} // $test->{expect};
 
       my $got = build_content_type($input);
       is($got, $expect, "build C-T ($type)");
