@@ -1,6 +1,8 @@
 Revision history for Perl extension Email::MIME::ContentType
 
 {{$NEXT}}
+
+1.028     2023-01-08 19:26:20-05:00 America/New_York
         - update author info
 
 1.027     2022-09-04 04:11:43-05:00 America/Chicago
