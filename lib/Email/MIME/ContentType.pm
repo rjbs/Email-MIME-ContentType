@@ -1,4 +1,4 @@
-use strict;
+use v5.12.0;
 use warnings;
 package Email::MIME::ContentType;
 # ABSTRACT: Parse and build a MIME Content-Type or Content-Disposition Header
@@ -95,7 +95,7 @@ sub parse_content_type {
   my $ct = shift;
 
   # If the header isn't there or is empty, give default answer.
-  return parse_content_type($ct_default) unless defined $ct and length $ct;
+  return parse_content_type($ct_default) unless length $ct;
 
   _unfold_lines($ct);
   _clean_comments($ct);
@@ -138,7 +138,7 @@ my $cd_default = 'attachment';
 sub parse_content_disposition {
   my $cd = shift;
 
-  return parse_content_disposition($cd_default) unless defined $cd and length $cd;
+  return parse_content_disposition($cd_default) unless length $cd;
 
   _unfold_lines($cd);
   _clean_comments($cd);
