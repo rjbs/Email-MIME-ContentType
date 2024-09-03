@@ -75,7 +75,7 @@ jobs:
 
     steps:
       - name: Download tarball
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: Dist-To-Test.tar.gz
       - name: Extract tarball
